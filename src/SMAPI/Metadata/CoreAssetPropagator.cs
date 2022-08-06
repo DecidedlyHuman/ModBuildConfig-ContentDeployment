@@ -288,9 +288,7 @@ namespace StardewModdingAPI.Metadata
                     return true;
 
                 case "data/concessiontastes": // MovieTheater.GetConcessionTasteForCharacter
-                    this.Reflection
-                        .GetField<List<ConcessionTaste>>(typeof(MovieTheater), "_concessionTastes")
-                        .SetValue(content.Load<List<ConcessionTaste>>(key));
+                    MovieTheater.ClearCachedConcessionTastes();
                     return true;
 
                 case "data/cookingrecipes": // CraftingRecipe.InitShared
@@ -447,8 +445,7 @@ namespace StardewModdingAPI.Metadata
 
             foreach (Farmer player in players)
             {
-                var recolorOffsets = this.Reflection.GetField<Dictionary<string, Dictionary<int, List<int>>>?>(typeof(FarmerRenderer), "_recolorOffsets").GetValue();
-                recolorOffsets?.Clear();
+                FarmerRenderer.recolorOffsets?.Clear();
 
                 player.FarmerRenderer.MarkSpriteDirty();
             }
