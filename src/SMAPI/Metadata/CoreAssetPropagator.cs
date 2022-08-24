@@ -12,7 +12,6 @@ using StardewModdingAPI.Internal;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData;
-using StardewValley.GameData.Movies;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 using xTile;
@@ -266,12 +265,12 @@ namespace StardewModdingAPI.Metadata
                     return true;
 
                 case "data/boots": // BootsDataDefinition
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/bigcraftablesinformation": // Game1.LoadContent
                     Game1.bigCraftablesInformation = content.Load<Dictionary<string, string>>(key);
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/buildingsdata": // Game1.LoadContent
@@ -280,7 +279,7 @@ namespace StardewModdingAPI.Metadata
 
                 case "data/clothinginformation": // Game1.LoadContent
                     Game1.clothingInformation = content.Load<Dictionary<string, string>>(key);
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/concessions": // MovieTheater.GetConcessions
@@ -303,14 +302,14 @@ namespace StardewModdingAPI.Metadata
                     return changed | (!ignoreWorld && this.UpdateFarmAnimalData());
 
                 case "data/furniture": // FurnitureDataDefinition
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/hairdata": // Farmer.GetHairStyleMetadataFile
                     return changed | this.UpdateHairData();
 
                 case "data/hats": // HatDataDefinition
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/locationcontexts": // GameLocation.LocationContext
@@ -335,16 +334,16 @@ namespace StardewModdingAPI.Metadata
 
                 case "data/objectinformation": // Game1.LoadContent
                     Game1.objectInformation = content.Load<Dictionary<string, string>>(key);
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/tooldata": // Game1.LoadContent
                     Game1.toolData = content.Load<Dictionary<string, string>>(key);
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/weapons": // WeaponDataDefinition
-                    Utility.ClearParsedItemIDs();
+                    ItemRegistry.ResetCache();
                     return true;
 
                 case "data/wildtrees": // Tree

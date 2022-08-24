@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using StardewValley;
 using StardewValley.GameData.FishPond;
+using StardewValley.ItemTypeDefinitions;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley.Tools;
@@ -20,7 +21,7 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
         ** Public methods
         *********/
         /// <summary>Get all spawnable items.</summary>
-        /// <param name="onlyType">Only include items for the given <see cref="ItemDataDefinition.Identifier"/>.</param>
+        /// <param name="onlyType">Only include items for the given <see cref="IItemDataDefinition.Identifier"/>.</param>
         /// <param name="includeVariants">Whether to include flavored variants like "Sunflower Honey".</param>
         [SuppressMessage("ReSharper", "AccessToModifiedClosure", Justification = $"{nameof(ItemRepository.TryCreate)} invokes the lambda immediately.")]
         public IEnumerable<SearchableItem> GetAll(string? onlyType = null, bool includeVariants = true)
@@ -38,7 +39,7 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
             IEnumerable<SearchableItem?> GetAllRaw()
             {
                 // get from item data definitions
-                foreach (ItemDataDefinition itemType in ItemDataDefinition.ItemTypes)
+                foreach (IItemDataDefinition itemType in ItemRegistry.ItemTypes)
                 {
                     if (onlyType != null && itemType.Identifier != onlyType)
                         continue;
@@ -47,14 +48,14 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                     {
                         // tools
                         case "(T)":
-                            foreach (string id in itemType.GetAllItemIDs())
+                            foreach (string id in itemType.GetAllIds())
                             {
                                 // base item
-                                SearchableItem? baseTool = this.TryCreate(itemType.Identifier, id, p => itemType.CreateItem(p.ID, 1, SObject.lowQuality));
+                                SearchableItem? baseTool = this.TryCreate(itemType.Identifier, id, p => ItemRegistry.Create(itemType.Identifier + p.Id));
                                 yield return baseTool;
 
                                 // handle tool upgrades
-                                if (baseTool?.ID is nameof(Axe) or nameof(FishingRod) or nameof(Hoe) or nameof(Pickaxe) or nameof(WateringCan))
+                                if (baseTool?.Id is nameof(Axe) or nameof(FishingRod) or nameof(Hoe) or nameof(Pickaxe) or nameof(WateringCan))
                                 {
                                     for (int q = Tool.copper; q <= Tool.iridium; q++)
                                     {
@@ -62,11 +63,11 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                                         int quality = q;
 
                                         // no iridium fishing rod
-                                        if (quality == Tool.iridium && baseTool.ID == nameof(FishingRod))
+                                        if (quality == Tool.iridium && baseTool.Id == nameof(FishingRod))
                                             continue;
 
                                         // get upgraded tool
-                                        yield return this.TryCreate(itemType.Identifier, $"{baseTool.ID}/{quality}", _ =>
+                                        yield return this.TryCreate(itemType.Identifier, $"{baseTool.Id}/{quality}", _ =>
                                         {
                                             Tool tool = (Tool)baseTool.CreateItem();
                                             tool.UpgradeLevel = quality;
@@ -79,24 +80,24 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
 
                         // objects
                         case "(O)":
-                            foreach (string id in itemType.GetAllItemIDs())
+                            foreach (string id in itemType.GetAllIds())
                             {
                                 // base item
-                                SearchableItem? result = this.TryCreate(itemType.Identifier, id, p => itemType.CreateItem(p.ID, 1, SObject.lowQuality));
+                                SearchableItem? result = this.TryCreate(itemType.Identifier, id, p => ItemRegistry.Create(itemType.Identifier + p.Id));
 
                                 // ring
                                 if (result?.Item is Ring)
                                     yield return result;
 
                                 // journal scraps
-                                else if (result?.QualifiedItemID == "(O)842")
+                                else if (result?.QualifiedItemId == "(O)842")
                                 {
                                     foreach (SearchableItem? journalScrap in this.GetSecretNotes(itemType, isJournalScrap: true))
                                         yield return journalScrap;
                                 }
 
                                 // secret notes
-                                else if (result?.QualifiedItemID == "(O)79")
+                                else if (result?.QualifiedItemId == "(O)79")
                                 {
                                     foreach (SearchableItem? secretNote in this.GetSecretNotes(itemType, isJournalScrap: false))
                                         yield return secretNote;
@@ -118,8 +119,8 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
 
                         // no special handling needed
                         default:
-                            foreach (string id in itemType.GetAllItemIDs())
-                                yield return this.TryCreate(itemType.Identifier, id, p => itemType.CreateItem(p.ID, 1, SObject.lowQuality));
+                            foreach (string id in itemType.GetAllIds())
+                                yield return this.TryCreate(itemType.Identifier, id, p => ItemRegistry.Create(itemType.Identifier + p.Id));
                             break;
                     }
                 }
@@ -128,14 +129,14 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                 if (onlyType is null or "(WP)")
                 {
                     for (int id = 0; id < 112; id++)
-                        yield return this.TryCreate("(WP)", id.ToString(), p => new Wallpaper(int.Parse(p.ID)) { Category = SObject.furnitureCategory });
+                        yield return this.TryCreate("(WP)", id.ToString(), p => new Wallpaper(int.Parse(p.Id)) { Category = SObject.furnitureCategory });
                 }
 
                 // flooring
                 if (onlyType is null or "(FL)")
                 {
                     for (int id = 0; id < 56; id++)
-                        yield return this.TryCreate("(FL)", id.ToString(), p => new Wallpaper(int.Parse(p.ID), isFloor: true) { Category = SObject.furnitureCategory });
+                        yield return this.TryCreate("(FL)", id.ToString(), p => new Wallpaper(int.Parse(p.Id), isFloor: true) { Category = SObject.furnitureCategory });
                 }
             }
 
@@ -154,7 +155,7 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
         /// <param name="itemType">The object data definition.</param>
         /// <param name="isJournalScrap">Whether to get journal scraps.</param>
         /// <remarks>Derived from <see cref="GameLocation.tryToCreateUnseenSecretNote"/>.</remarks>
-        private IEnumerable<SearchableItem?> GetSecretNotes(ItemDataDefinition itemType, bool isJournalScrap)
+        private IEnumerable<SearchableItem?> GetSecretNotes(IItemDataDefinition itemType, bool isJournalScrap)
         {
             // get base item ID
             string baseId = isJournalScrap ? "842" : "79";
@@ -173,11 +174,13 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                 );
 
             // build items
-            foreach (int id in ids)
+            foreach (int i in ids)
             {
+                int id = i; // avoid closure capture
+
                 yield return this.TryCreate(itemType.Identifier, $"{baseId}/{id}", _ =>
                 {
-                    Item note = itemType.CreateItem(baseId, 1, SObject.lowQuality);
+                    Item note = ItemRegistry.Create(itemType.Identifier + id);
                     note.Name = $"{note.Name} #{id}";
                     return note;
                 });
@@ -187,12 +190,12 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
         /// <summary>Get flavored variants of a base item (like Blueberry Wine for Blueberry), if any.</summary>
         /// <param name="item">A sample of the base item.</param>
         /// <param name="itemType">The object data definition.</param>
-        private IEnumerable<SearchableItem?> GetFlavoredObjectVariants(SObject? item, ItemDataDefinition itemType)
+        private IEnumerable<SearchableItem?> GetFlavoredObjectVariants(SObject? item, IItemDataDefinition itemType)
         {
             if (item is null)
                 yield break;
 
-            string id = item.ItemID;
+            string id = item.ItemId;
 
             switch (item.Category)
             {
@@ -253,14 +256,14 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                     break;
 
                 // roe and aged roe (derived from FishPond.GetFishProduce)
-                case SObject.sellAtFishShopCategory when item.QualifiedItemID == "(O)812":
+                case SObject.sellAtFishShopCategory when item.QualifiedItemId == "(O)812":
                     {
                         this.GetRoeContextTagLookups(out HashSet<string> simpleTags, out List<List<string>> complexTags);
 
                         foreach (var pair in Game1.objectInformation)
                         {
                             // get input
-                            SObject? input = this.TryCreate(itemType.Identifier, pair.Key, p => new SObject(p.ID, 1))?.Item as SObject;
+                            SObject? input = this.TryCreate(itemType.Identifier, pair.Key, p => new SObject(p.Id, 1))?.Item as SObject;
                             if (input == null)
                                 continue;
 
@@ -275,13 +278,13 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                             // yield roe
                             SObject? roe = null;
                             Color color = this.GetRoeColor(input);
-                            yield return this.TryCreate(itemType.Identifier, $"812/{input.ItemID}", _ =>
+                            yield return this.TryCreate(itemType.Identifier, $"812/{input.ItemId}", _ =>
                             {
                                 roe = new ColoredObject("812", 1, color)
                                 {
                                     name = $"{input.Name} Roe",
                                     preserve = { Value = SObject.PreserveType.Roe },
-                                    preservedParentSheetIndex = { Value = input.ItemID }
+                                    preservedParentSheetIndex = { Value = input.ItemId }
                                 };
                                 roe.Price += input.Price / 2;
                                 return roe;
@@ -290,12 +293,12 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
                             // aged roe
                             if (roe != null && pair.Key != "698") // aged sturgeon roe is caviar, which is a separate item
                             {
-                                yield return this.TryCreate(itemType.Identifier, $"447/{input.ItemID}", _ => new ColoredObject("447", 1, color)
+                                yield return this.TryCreate(itemType.Identifier, $"447/{input.ItemId}", _ => new ColoredObject("447", 1, color)
                                 {
                                     name = $"Aged {input.Name} Roe",
                                     Category = -27,
                                     preserve = { Value = SObject.PreserveType.AgedRoe },
-                                    preservedParentSheetIndex = { Value = input.ItemID },
+                                    preservedParentSheetIndex = { Value = input.ItemId },
                                     Price = roe.Price * 2
                                 });
                             }
@@ -315,7 +318,7 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
 
             foreach (FishPondData data in Game1.content.Load<List<FishPondData>>("Data\\FishPondData"))
             {
-                if (data.ProducedItems.All(p => p.ItemID != "812"))
+                if (data.ProducedItems.All(p => p.ItemId != "812"))
                     continue; // doesn't produce roe
 
                 if (data.RequiredTags.Count == 1 && !data.RequiredTags[0].StartsWith("!"))
@@ -366,7 +369,7 @@ namespace StardewModdingAPI.Mods.ConsoleCommands.Framework
         /// <remarks>Derived from <see cref="StardewValley.Buildings.FishPond.GetFishProduce"/>.</remarks>
         private Color GetRoeColor(SObject fish)
         {
-            return fish.QualifiedItemID == "(O)698" // sturgeon
+            return fish.QualifiedItemId == "(O)698" // sturgeon
                 ? new Color(61, 55, 42)
                 : (TailoringMenu.GetDyeColor(fish) ?? Color.Orange);
         }
